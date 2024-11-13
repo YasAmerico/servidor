@@ -1,56 +1,43 @@
-from ariadne import QueryType,MutationType
-from models import Author,Book
+from fastapi import FastAPI
+from ariadne.asgi import GraphQL
+from resolvers import query,mutation
 
-authors_db = []
-books_db = []
+from ariadne import make_executable_schema
+from ariadne import gql
+app = FastAPI()
 
-query = QueryType()
-mutation = MutationType()
+type_defs = gql("""
+    type Author{
+        id:ID!
+        name:String!   
+    }
+            
+    type Book{
+        id:ID!
+        title:String!
+        authors:[Author!]!       
+    }  
 
-@query.field("authors")
-def resolve_authors(_,info):
-    return authors_db
+    type Query{
+        authors:[Author!]!
+        books:[Book!]!
+    }
 
-@query.field("books")
-def resolve_books(_,info):
-    return books_db
+    type Mutation{
+        createAuthor(name:String!):Author!            
+        updateAuthor(id:Int!,name:String!):Author!
+        deleteAuthor(id:Int!): Boolean!
+                
+        createBook(title:String!,authorIds:[Int!]!):Book!
+        updateBook(id:Int!,title:String!,authorIds:[Int!]!):Book!
+        deleteBook(id:Int!):Boolean!               
+    }
+""")
+schema = make_executable_schema(type_defs, query, mutation)
 
-@mutation.field("createAuthor")
-def resolve_create_author(_,info,name):
-    author = Author(id = len(authors_db)+1,name=name)
-    authors_db.append(author)
-    return author
+#configura o endpoint GraphQl
+app.add_route("/graphql",GraphQL(schema,debug=True))
 
-@mutation.field("updateAuthor")
-def resolve_update_author(_,info,id,name):
-    author=next((a for a in authors_db if a.id == id),None)
-    if author:
-        author.name = name
-        return author
-    return None
-
-@mutation.field("deleteAuthor")
-def resolve_delete_author(_, info, id):
-    global authors_db
-    authors_db = [a for a in authors_db if a.id != id]
-    return True
-
-@mutation.field("createBook")
-def resolve_update_author(_, title , authorIds):
-    book = Book (id=len(books_db)+ 1, title =title, author_ids=authorIds)
-    books_db.append(book)
-    return book
-
-@mutation.field("updateBook")
-def resolve_update_author(_,id , title , authorIds):
-    book = next((b for b in books_db if b.id == id),None)
-    if book:
-        book.title = title
-        book.author_ids = authorIds
-        return book
-    return None
-
-@mutation.field("deleteBook")
-def resolve_delete_author(_, title , id):
-    global books_db
-    books_db=[b for b in books_db if b.id != id]
+@app.get("/")
+def read_root():
+    return {"message":"Servidor GraphQl!"}

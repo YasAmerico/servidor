@@ -22,7 +22,7 @@ def resolve_create_author(_,info,name):
     return author
 
 @mutation.field("updateAuthor")
-def resolve_update_author(_,info,name):
+def resolve_update_author(_,info,id,name):
     author=next((a for a in authors_db if a.id == id),None)
     if author:
         author.name = name
@@ -32,7 +32,7 @@ def resolve_update_author(_,info,name):
 @mutation.field("deleteAuthor")
 def resolve_delete_author(_, info, id):
     global authors_db
-    authors_db = [a for a in authors_db if a.id ! = id]
+    authors_db = [a for a in authors_db if a.id != id]
     return True
 
 @mutation.field("createBook")

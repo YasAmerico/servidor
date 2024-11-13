@@ -12,7 +12,7 @@ type_defs = gql("""
         name:String!   
     }
             
-    type Books{
+    type Book{
         id:ID!
         title:String!
         authors:[Author!]!       
@@ -25,12 +25,12 @@ type_defs = gql("""
 
     type Mutation{
         createAuthor(name:String!):Author!            
-        updateAuthor(id:ID!,name:String!):Author!
-        deleteAuthor(id:ID!): Boolean!
+        updateAuthor(id:Int!,name:String!):Author!
+        deleteAuthor(id:Int!): Boolean!
                 
-        createBook(title:String!,authorIds:[ID!]!):Book!
-        updateBook(id:ID!,title:String!,authorIds:[ID!]!):Book!
-        deleteBook(id:ID!):Boolean!               
+        createBook(title:String!,authorIds:[Int!]!):Book!
+        updateBook(id:Int!,title:String!,authorIds:[Int!]!):Book!
+        deleteBook(id:Int!):Boolean!               
     }
 """)
 schema = make_executable_schema(type_defs, query, mutation)

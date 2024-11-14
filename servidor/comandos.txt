@@ -1,1 +1,28 @@
+*consultar todos os autores
+query{
+    authors{
+        id
+        name
+    }
+}
 
+*Criar o autores
+mutation{
+    createAuthor(name:"nome do Author"){
+        id
+        name
+    }
+}
+
+*Atualizar o author com o ID nr1
+mutation{
+    updateAuthor(id:1,name:"nome do Author"){
+        id
+        name
+    }
+}
+
+*deletar um livro
+mutation{
+    deleteBook(id:1)
+}

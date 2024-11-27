@@ -1,8 +1,9 @@
+from fastapi import FastAPI
 from ariadne import QueryType,MutationType
 from models import Author,Book
-import sqlite3
-
-DATABASE = 'storage.db'
+from banco import gravarAuthorDB,gravarBookDB
+import asyncio
+from asyncio import get_event_loop
 
 authors_db = []
 books_db = []
@@ -57,49 +58,3 @@ def resolve_update_author(_,id , title , authorIds):
 def resolve_delete_author(_, title , id):
     global books_db
     books_db=[b for b in books_db if b.id != id]
-
-#conectar ao banco de dados
-def get_db():
-    db = getattr(g, '_database',None)
-    if db is None:
-        db = g._database = sqlite3.connect(DATABASE)
-    return db
-
-#fechar conexão com o o banco de dados ao finalizar a requisição
-def close_connection():
-    db = getattr(g,'_database',None)
-    if db is not None:
-        db.close()
-
-#Inicializar banco de dados
-def int_db():
-    db = get_db()
-    cursor = db.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS author(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL 
-        )
-    ''')
-
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS book(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL, 
-            author_id INTEGER
-        )
-    ''')
-
-    db.commit()
-    close_connection()
-
-#Gravar Autor no banco de dados
-def gravarAuthorDB(name):
-    print("grava author no banco")
-    db = get_db()
-    cursor = db.cursor()
-    cursor.execute('INSERT INTO AUTHOR (name) VALUES(?),'
-                (name))
-    
-    db.commit()
-    close_connection()

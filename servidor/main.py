@@ -1,10 +1,30 @@
 from fastapi import FastAPI
 from ariadne.asgi import GraphQL
 from resolvers import query,mutation
-
+from banco import init_db
 from ariadne import make_executable_schema
 from ariadne import gql
+
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI()
+
+#Definindo as origens permitidas pelo CORS
+origins =[
+    "http://localhost",
+    "http://localhost:8000",#se o frontend estiver na porta 8000
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins = origins,
+    allow_credentials= True,
+    allow_methods=["*"], 
+    allow_headers=["*"],
+)
+
+#Inicializar o banco de dados
+init_db()
 
 type_defs = gql("""
     type Author{
@@ -35,8 +55,10 @@ type_defs = gql("""
 """)
 schema = make_executable_schema(type_defs, query, mutation)
 
+graphql_app = GraphQL(schema,debug=True)
+
 #configura o endpoint GraphQl
-app.add_route("/graphql",GraphQL(schema,debug=True))
+app.add_route("/graphql",graphql_app)
 
 @app.get("/")
 def read_root():

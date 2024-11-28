@@ -1,15 +1,18 @@
 from fastapi import FastAPI
-from ariadne import QueryType,MutationType
+from ariadne import QueryType,MutationType,SubscriptionType
 from models import Author,Book
 from banco import gravarAuthorDB,gravarBookDB
 import asyncio
 from asyncio import get_event_loop
+from starlette.websockets import WebSocket
 
 authors_db = []
 books_db = []
 
 query = QueryType()
 mutation = MutationType()
+subscription =SubscriptionType
+
 
 @query.field("authors")
 def resolve_authors(_,info):
@@ -58,3 +61,12 @@ def resolve_update_author(_,id , title , authorIds):
 def resolve_delete_author(_, title , id):
     global books_db
     books_db=[b for b in books_db if b.id != id]
+    return True
+
+@subscription.source("bookAdicionado")
+async def source_book_adicionado(_,info):
+    while True:
+        await asyncio.sleep(1)
+@subscription.field("bookAdicionado")
+def resolver_book_adicionado(obj,info):
+    return obj["payload"]

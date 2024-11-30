@@ -1,6 +1,6 @@
 from fastapi import FastAPI,WebSocket
 from ariadne.asgi import GraphQL
-from resolvers import query,mutation,Subscription
+from resolvers import query,mutation,subscription,setSubscribers,deleteSubscribers
 from banco import init_db
 from ariadne import make_executable_schema
 from ariadne import gql
@@ -17,7 +17,7 @@ origins =[
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins = origins,
+    allow_origins = ["*"],#origins,
     allow_credentials= True,
     allow_methods=["*"], 
     allow_headers=["*"],
@@ -50,16 +50,16 @@ type_defs = gql("""
         updateAuthor(id:Int!,name:String!):Author!
         deleteAuthor(id:Int!): Boolean!
                 
-        createBook(title:String!,authorIds:[Int!]!):Book!
-        updateBook(id:Int!,title:String!,authorIds:[Int!]!):Book!
+        createBook(title:String!,author_id:[Int!]!):Book!
+        updateBook(id:Int!,title:String!,author_id:[Int!]!):Book!
         deleteBook(id:Int!):Boolean!               
     }
     
     type Subscription{
-        bookAdicionado:Book
+        authorAdicionado:Author
                 }
 """)
-schema = make_executable_schema(type_defs, query, mutation,Subscription)
+schema = make_executable_schema(type_defs, query, mutation,subscription)
 
 graphql_app = GraphQL(schema,debug=True)
 
@@ -71,7 +71,8 @@ app.add_route("/graphql",graphql_app)
 async def websocket_endpoint(websocket:WebSocket):
     await websocket.accept()
 
-    subscribers.append(websocket)
+    setSubscribers(subscribers,websocket)
+    
 
     try:
         while True:
@@ -82,8 +83,9 @@ async def websocket_endpoint(websocket:WebSocket):
         print(f"erro exception:{e}")
 
     finally:
-        subscribers.remove(websocket)
+        deleteSubscribers(websocket)
 
 @app.get("/")
 def read_root():
     return {"message":"Servidor GraphQl!"}
+

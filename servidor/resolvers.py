@@ -8,10 +8,11 @@ from starlette.websockets import WebSocket
 
 authors_db = []
 books_db = []
+subscribers =[]#temporariamente,fazer função para trazer o main
 
 query = QueryType()
 mutation = MutationType()
-subscription =SubscriptionType
+subscription =SubscriptionType()
 
 
 @query.field("authors")
@@ -23,9 +24,13 @@ def resolve_books(_,info):
     return books_db
 
 @mutation.field("createAuthor")
-def resolve_create_author(_,info,name):
+def resolve_create_author(_,info,name:str) ->dict:
     author = Author(id = len(authors_db)+1,name=name)
     authors_db.append(author)
+    gravarAuthorDB
+    #Notificar todos as conexões Websocket conectados(assinantes)
+    for subscriber in subscribers:
+        asyncio.create_task(subscriber.send_json({"type":"authorAdicionado","author_id":author.id,"nome":author.name}))
     return author
 
 @mutation.field("updateAuthor")
@@ -43,8 +48,8 @@ def resolve_delete_author(_, info, id):
     return True
 
 @mutation.field("createBook")
-def resolve_update_author(_, title , authorIds):
-    book = Book (id=len(books_db)+ 1, title =title, author_ids=authorIds)
+def resolve_update_author(_, title , author_id):
+    book = Book (id=len(books_db)+ 1, title =title, author_ids=author_id)
     books_db.append(book)
     return book
 
@@ -63,10 +68,18 @@ def resolve_delete_author(_, title , id):
     books_db=[b for b in books_db if b.id != id]
     return True
 
-@subscription.source("bookAdicionado")
-async def source_book_adicionado(_,info):
+@subscription.source("authorAdicionado")
+async def source_author_adicionado(_,info):
     while True:
         await asyncio.sleep(1)
-@subscription.field("bookAdicionado")
-def resolver_book_adicionado(obj,info):
+
+@subscription.field("authorAdicionado")
+def resolver_author_adicionado(obj,info):
     return obj["payload"]
+
+def setSubscribers(p_subscribers,websocket:WebSocket):
+    subscribers = p_subscribers
+    subscribers.append(websocket)
+
+def  deleteSubscribers(websocket:WebSocket):
+    subscribers.remove(websocket)
